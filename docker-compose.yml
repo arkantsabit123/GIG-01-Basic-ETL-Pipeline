@@ -2,6 +2,10 @@
 # GIG 1 — BASIC ETL/ELT PIPELINE
 # docker-compose.yml
 # ============================================
+# Version   : 1.0.1
+# Reference : docs/blueprint.md section 8
+# Services  : 3 (PostgreSQL, Airflow, Streamlit)
+# ============================================
 
 services:
   # ==========================================
@@ -50,6 +54,7 @@ services:
       _AIRFLOW_WWW_USER_CREATE: 'true'
       _AIRFLOW_WWW_USER_USERNAME: admin
       _AIRFLOW_WWW_USER_PASSWORD: admin
+      _PIP_ADDITIONAL_REQUIREMENTS: 'openpyxl==3.1.0'
       PYTHONPATH: /opt/airflow
     ports:
       - "8080:8080"

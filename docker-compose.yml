@@ -2,12 +2,6 @@
 # GIG 1 — BASIC ETL/ELT PIPELINE
 # docker-compose.yml
 # ============================================
-# Version   : 1.0.1
-# Reference : docs/blueprint.md section 8
-# Services  : 3 (PostgreSQL, Airflow, Streamlit)
-# ============================================
-
-version: '3.8'
 
 services:
   # ==========================================
@@ -21,11 +15,13 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
       POSTGRES_DB: ${POSTGRES_DB:-warehouse}
+      POSTGRES_MULTIPLE_DATABASES: warehouse,airflow
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./warehouse/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./warehouse/init-databases.sh:/docker-entrypoint-initdb.d/00-init-databases.sh
+      - ./warehouse/init.sql:/docker-entrypoint-initdb.d/01-init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d warehouse"]
       interval: 10s
@@ -47,7 +43,8 @@ services:
     environment:
       AIRFLOW__CORE__EXECUTOR: SequentialExecutor
       AIRFLOW__CORE__LOAD_EXAMPLES: 'False'
-      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:admin@postgres:5432/warehouse
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:admin@postgres:5432/airflow
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:admin@postgres:5432/airflow
       AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY:-your-secret-key-here}
       AIRFLOW__WEBSERVER__DEFAULT_UI_TIMEZONE: Asia/Jakarta
       _AIRFLOW_WWW_USER_CREATE: 'true'

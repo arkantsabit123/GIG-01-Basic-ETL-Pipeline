@@ -1,0 +1,275 @@
+# ============================================
+# GIG 1 — BASIC ETL/ELT PIPELINE
+# .gitignore
+# ============================================
+# Version   : 1.0.1
+# Updated   : 2026-09-23
+# Reference : docs/blueprint.md §7
+# ============================================
+
+
+# ============================================
+# Python
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+.Python
+*.egg-info/
+.eggs/
+build/
+dist/
+wheels/
+pip-wheel-metadata/
+*.egg
+*.whl
+MANIFEST
+
+# ============================================
+# Virtual Environment (blueprint §27.1)
+# ============================================
+venv/
+env/
+ENV/
+.venv/
+env.bak/
+venv.bak/
+.python-version
+
+# ============================================
+# Environment Variables (blueprint §10)
+# ============================================
+.env
+.env.local
+.env.*.local
+*.env.production
+*.env.staging
+local.env
+
+# ============================================
+# Testing & Coverage (blueprint §6.2)
+# ============================================
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+*.cover
+
+# ============================================
+# Linter / Type Checker (blueprint §6.2)
+# ============================================
+.flake8
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# ============================================
+# Jupyter Notebook
+# ============================================
+.ipynb_checkpoints/
+*.ipynb
+
+# ============================================
+# IDEs / Editors
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+.vs/
+*.code-workspace
+
+# ============================================
+# OS Generated Files
+# ============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+desktop.ini
+.directory
+
+# ============================================
+# Data Files (Large) — blueprint §7
+# ============================================
+data/raw/*.xlsx
+data/raw/*.xls
+data/raw/*.zip
+data/staging/*.csv
+data/staging/*.parquet
+*.csv
+*.xlsx
+*.xls
+*.parquet
+
+# ============================================
+# Logs & Temp Files
+# ============================================
+*.log
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+*.patch
+tmp/
+temp/
+
+# ============================================
+# Docker (blueprint §8)
+# ============================================
+postgres_data/
+pgdata/
+.docker/
+docker-compose.override.yml
+*.pid
+*.lock
+*.socket
+*.sock
+
+# ============================================
+# PostgreSQL
+# ============================================
+warehouse/*.db
+warehouse/*.sqlite
+warehouse/*.sqlite3
+warehouse/*.log
+warehouse/*.wal
+warehouse/*.tmp
+warehouse/*.journal
+
+# ============================================
+# Airflow (blueprint §8)
+# ============================================
+logs/
+airflow.db
+airflow.cfg
+airflow-webserver.pid
+airflow-scheduler.pid
+airflow-worker.pid
+airflow-webserver.log
+airflow-scheduler.log
+airflow-worker.log
+airflow.db-journal
+airflow.db-wal
+airflow.db-shm
+airflow.cfg.bak
+standalone_admin_credentials.txt
+unittests.cfg
+webserver_config.py
+dags/__pycache__/
+scripts/__pycache__/
+dashboard/__pycache__/
+
+# ============================================
+# Streamlit
+# ============================================
+.streamlit/secrets.toml
+.streamlit/
+
+# ============================================
+# Security / Credentials
+# ============================================
+*.key
+*.pem
+*.crt
+*.csr
+secrets/
+*.secret
+*.secrets
+credentials.json
+.credentials.json
+*.password
+*.secret.yaml
+*.secret.yml
+
+# ============================================
+# Archive Files
+# ============================================
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+*.bz2
+*.xz
+*.gz
+
+# ============================================
+# Media Files
+# ============================================
+*.mp3
+*.wav
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.iso
+
+# ============================================
+# Test Reports
+# ============================================
+test-reports/
+pytest_report.html
+test_report_*.json
+*.report.json
+test-results/
+junit.xml
+
+# ============================================
+# Phase Verification Scripts
+# ============================================
+verify-phase-*.py
+verify-*.py
+verify-all-phase.py
+run_all_verifications.py
+run_all_checks.py
+
+# ============================================
+# Phase Verification Reports
+# ============================================
+phase*_verification.json
+phase*_verification_report.txt
+verification_report.txt
+run_all_checks_report.txt
+*_report.txt
+
+# ============================================
+# Utilities / Troubleshooting (Local only)
+# ============================================
+troubleshoot*.py
+troubleshoot_*.py
+troubleshooting/
+create_sample.py
+setup_project.py
+data_inspection.py
+structure.py
+check_all_logins.txt
+check_all_logins.py
+archive/
+archive/*
+
+# ============================================
+# Internal Documentation (Private)
+# ============================================
+docs/

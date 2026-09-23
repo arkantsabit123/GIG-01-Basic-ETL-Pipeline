@@ -1,0 +1,118 @@
+# ============================================
+# GIG 1 — BASIC ETL/ELT PIPELINE
+# docker-compose.yml
+# ============================================
+# Version   : 1.0.1
+# Reference : docs/blueprint.md section 8
+# Services  : 3 (PostgreSQL, Airflow, Streamlit)
+# ============================================
+
+version: '3.8'
+
+services:
+  # ==========================================
+  # PostgreSQL 15 — Data Warehouse
+  # ==========================================
+  postgres:
+    image: postgres:15
+    container_name: gig01-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      POSTGRES_DB: ${POSTGRES_DB:-warehouse}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./warehouse/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d warehouse"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gig01-network
+
+  # ==========================================
+  # Apache Airflow 2.7.3 — Orchestration
+  # ==========================================
+  airflow:
+    image: apache/airflow:2.7.3
+    container_name: gig01-airflow
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'False'
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:admin@postgres:5432/warehouse
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY:-your-secret-key-here}
+      AIRFLOW__WEBSERVER__DEFAULT_UI_TIMEZONE: Asia/Jakarta
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: admin
+      _AIRFLOW_WWW_USER_PASSWORD: admin
+      PYTHONPATH: /opt/airflow
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./scripts:/opt/airflow/scripts
+      - ./data:/opt/airflow/data
+      - ./warehouse:/opt/airflow/warehouse
+    command: >
+      bash -c "
+      airflow db init &&
+      airflow users create
+        --username admin
+        --firstname Admin
+        --lastname User
+        --role Admin
+        --email admin@example.com
+        --password admin || true &&
+      airflow webserver & airflow scheduler
+      "
+    networks:
+      - gig01-network
+
+  # ==========================================
+  # Streamlit 1.29.0 — Dashboard
+  # ==========================================
+  streamlit:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: gig01-streamlit
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: warehouse
+      DATA_LIMIT: ${DATA_LIMIT:-100000}
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./dashboard:/app
+      - ./data:/app/data
+    networks:
+      - gig01-network
+
+# ============================================
+# Volumes
+# ============================================
+volumes:
+  postgres_data:
+    name: gig01_postgres_data
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  gig01-network:
+    name: gig01-network
+    driver: bridge

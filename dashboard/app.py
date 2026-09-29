@@ -28,8 +28,15 @@ POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "admin")
 POSTGRES_DB = os.getenv("POSTGRES_DB", "warehouse")
 TABLE_NAME = "fact_trips"
 
-DATA_LIMIT_ENV = os.getenv("DATA_LIMIT", "100000")
-DATA_LIMIT = int(DATA_LIMIT_ENV) if DATA_LIMIT_ENV and DATA_LIMIT_ENV.lower() != "none" else None
+# Safe parsing for DATA_LIMIT
+_data_limit_env = os.getenv("DATA_LIMIT", "100000")
+if _data_limit_env and _data_limit_env.lower() != "none":
+    try:
+        DATA_LIMIT = int(_data_limit_env)
+    except ValueError:
+        DATA_LIMIT = 100000
+else:
+    DATA_LIMIT = None
 
 
 # ============================================
@@ -69,6 +76,11 @@ def load_data():
 
     df = pd.read_sql(query, engine)
     df["invoice_date"] = pd.to_datetime(df["invoice_date"])
+
+    # Build category from stock_code prefix, drop NaN-like values
+    df["category"] = df["stock_code"].astype(str).str[:2]
+    df = df[df["category"].notna() & (df["category"] != "na") & (df["category"] != "nan")]
+
     return df
 
 
@@ -118,13 +130,15 @@ selected_countries = st.sidebar.multiselect(
 )
 
 # Filter 3: Product Category (by stock_code prefix)
-df["category"] = df["stock_code"].astype(str).str[:2]
 all_categories = sorted(df["category"].dropna().unique().tolist())
 selected_categories = st.sidebar.multiselect(
     "Product Category (Stock Code Prefix)",
     options=all_categories,
     default=all_categories,
 )
+
+st.sidebar.markdown("---")
+st.sidebar.caption(f"Total rows in DB: {len(df):,}")
 
 
 # ============================================
@@ -133,17 +147,28 @@ selected_categories = st.sidebar.multiselect(
 
 filtered = df.copy()
 
+# Date range
 if isinstance(date_range, tuple) and len(date_range) == 2:
     start_date, end_date = date_range
     filtered = filtered[
         (filtered["invoice_date"].dt.date >= start_date)
         & (filtered["invoice_date"].dt.date <= end_date)
     ]
+else:
+    st.sidebar.warning("Select an end date to apply the range filter.")
 
-if selected_countries:
+# Country — empty selection means 0 rows
+if len(selected_countries) == 0:
+    st.warning("No countries selected. Showing 0 rows.")
+    filtered = filtered.iloc[0:0]
+else:
     filtered = filtered[filtered["country"].isin(selected_countries)]
 
-if selected_categories:
+# Category — empty selection means 0 rows
+if len(selected_categories) == 0:
+    st.warning("No categories selected. Showing 0 rows.")
+    filtered = filtered.iloc[0:0]
+else:
     filtered = filtered[filtered["category"].isin(selected_categories)]
 
 
@@ -154,9 +179,9 @@ if selected_categories:
 st.markdown("### Key Performance Indicators")
 
 total_transactions = len(filtered)
-total_revenue = (filtered["quantity"] * filtered["unit_price"]).sum()
-total_customers = filtered["customer_id"].nunique()
-total_products = filtered["stock_code"].nunique()
+total_revenue = (filtered["quantity"] * filtered["unit_price"]).sum() if not filtered.empty else 0.0
+total_customers = filtered["customer_id"].nunique() if not filtered.empty else 0
+total_products = filtered["stock_code"].nunique() if not filtered.empty else 0
 
 col1, col2, col3, col4 = st.columns(4)
 
@@ -164,7 +189,7 @@ with col1:
     st.metric("Total Transactions", f"{total_transactions:,}")
 
 with col2:
-    st.metric("Total Revenue", f"GBP {total_revenue:,.2f}")
+    st.metric("Total Revenue", f"£{total_revenue:,.2f}")
 
 with col3:
     st.metric("Total Customers", f"{total_customers:,}")
@@ -179,62 +204,68 @@ st.divider()
 # Charts
 # ============================================
 
-col_a, col_b = st.columns(2)
+if filtered.empty:
+    st.info("No data to display. Adjust the filters in the sidebar.")
+else:
+    col_a, col_b = st.columns(2)
 
-with col_a:
-    st.subheader("Revenue by Month")
-    monthly = filtered.copy()
-    monthly["month"] = monthly["invoice_date"].dt.to_period("M").astype(str)
-    monthly["revenue"] = monthly["quantity"] * monthly["unit_price"]
-    monthly_revenue = monthly.groupby("month")["revenue"].sum().reset_index()
+    with col_a:
+        st.subheader("Revenue by Month")
+        monthly = filtered.copy()
+        monthly["month"] = monthly["invoice_date"].dt.to_period("M").astype(str)
+        monthly["revenue"] = monthly["quantity"] * monthly["unit_price"]
+        monthly_revenue = monthly.groupby("month")["revenue"].sum().reset_index()
 
-    fig1 = px.line(
-        monthly_revenue,
-        x="month",
-        y="revenue",
-        markers=True,
-        labels={"month": "Month", "revenue": "Revenue (GBP)"},
-        color_discrete_sequence=["#1f77b4"],
+        fig1 = px.line(
+            monthly_revenue,
+            x="month",
+            y="revenue",
+            markers=True,
+            labels={"month": "Month", "revenue": "Revenue (£)"},
+            color_discrete_sequence=["#1f77b4"],
+        )
+        fig1.update_layout(height=400, showlegend=False)
+        st.plotly_chart(fig1, use_container_width=True)
+
+    with col_b:
+        st.subheader("Top 10 Products by Quantity")
+        top_products = (
+            filtered.groupby("stock_code")["quantity"].sum().nlargest(10).reset_index()
+        )
+        fig2 = px.bar(
+            top_products,
+            x="quantity",
+            y="stock_code",
+            orientation="h",
+            labels={"quantity": "Quantity Sold", "stock_code": "Product Code"},
+            color_discrete_sequence=["#ff7f0e"],
+        )
+        fig2.update_layout(
+            height=400,
+            showlegend=False,
+            yaxis={"categoryorder": "total ascending"},
+        )
+        st.plotly_chart(fig2, use_container_width=True)
+
+    st.subheader("Revenue by Country (Top 10)")
+    country_revenue = filtered.copy()
+    country_revenue["revenue"] = country_revenue["quantity"] * country_revenue["unit_price"]
+    country_revenue = (
+        country_revenue.groupby("country")["revenue"].sum().nlargest(10).reset_index()
     )
-    fig1.update_layout(height=400, showlegend=False)
-    st.plotly_chart(fig1, use_container_width=True)
 
-with col_b:
-    st.subheader("Top 10 Products by Quantity")
-    top_products = (
-        filtered.groupby("stock_code")["quantity"].sum().nlargest(10).reset_index()
-    )
-    fig2 = px.bar(
-        top_products,
-        x="quantity",
-        y="stock_code",
-        orientation="h",
-        labels={"quantity": "Quantity Sold", "stock_code": "Product Code"},
-        color_discrete_sequence=["#ff7f0e"],
-    )
-    fig2.update_layout(
-        height=400,
-        showlegend=False,
-        yaxis={"categoryorder": "total ascending"},
-    )
-    st.plotly_chart(fig2, use_container_width=True)
-
-
-st.subheader("Revenue by Country (Top 10)")
-country_revenue = filtered.copy()
-country_revenue["revenue"] = country_revenue["quantity"] * country_revenue["unit_price"]
-country_revenue = (
-    country_revenue.groupby("country")["revenue"].sum().nlargest(10).reset_index()
-)
-fig3 = px.pie(
-    country_revenue,
-    values="revenue",
-    names="country",
-    hole=0.4,
-    color_discrete_sequence=px.colors.qualitative.Set3,
-)
-fig3.update_layout(height=450)
-st.plotly_chart(fig3, use_container_width=True)
+    if country_revenue.empty:
+        st.info("No country data to display.")
+    else:
+        fig3 = px.pie(
+            country_revenue,
+            values="revenue",
+            names="country",
+            hole=0.4,
+            color_discrete_sequence=px.colors.qualitative.Set3,
+        )
+        fig3.update_layout(height=400)
+        st.plotly_chart(fig3, use_container_width=True)
 
 
 # ============================================
@@ -243,8 +274,11 @@ st.plotly_chart(fig3, use_container_width=True)
 
 st.divider()
 with st.expander("View Raw Data (first 100 rows)"):
-    st.dataframe(filtered.head(100), use_container_width=True)
-    st.caption(f"Showing first 100 rows of {len(filtered):,} filtered records")
+    if filtered.empty:
+        st.info("No data to display.")
+    else:
+        st.dataframe(filtered.head(100), use_container_width=True)
+        st.caption(f"Showing first 100 rows of {len(filtered):,} filtered records")
 
 
 # ============================================

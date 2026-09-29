@@ -273,3 +273,11 @@ archive/*
 # Internal Documentation (Private)
 # ============================================
 docs/
+
+
+
+# ============================================
+# EXCEPTIONS — Keep These Tracked
+# ============================================
+# Streamlit Cloud sample data (KEEP)
+!streamlit-cloud/data/sample_data.csv

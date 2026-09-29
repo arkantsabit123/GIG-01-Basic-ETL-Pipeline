@@ -21,7 +21,11 @@ import plotly.express as px
 # Configuration
 # ============================================
 
-DATA_PATH = "data/sample_data.csv"
+DATA_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "data",
+    "sample_data.csv"
+)
 
 st.set_page_config(
     page_title="GIG 1 - ETL Dashboard",

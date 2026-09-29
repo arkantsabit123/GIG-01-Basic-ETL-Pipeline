@@ -15,8 +15,9 @@
 [![Pandas](https://img.shields.io/badge/Pandas-2.0.3-150458)](https://pandas.pydata.org/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![Dataset](https://img.shields.io/badge/Dataset-Online%20Retail%20II-orange)](https://archive.ics.uci.edu/ml/datasets/Online+Retail+II)
-[![Verification](https://img.shields.io/badge/Verification-92%20checks-brightgreen)](docs/verification-checklist.md)
+[![Verification](https://img.shields.io/badge/Verification-78%2F92%20checks-brightgreen)](docs/verification-checklist.md)
 [![Screenshots](https://img.shields.io/badge/Screenshots-15-blueviolet)](screenshots/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://gig01-etl-pipeline.streamlit.app)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Arkan%20Tsabit-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/arkan-tsabit-0b12b9407)
 [![Instagram](https://img.shields.io/badge/Instagram-@arkantsabiit-E4405F?logo=instagram&logoColor=white)](https://www.instagram.com/arkantsabiit/)
 
@@ -35,17 +36,17 @@ This project is part of the **GIG-01** service offering — designed for SaaS st
 - **Interactive Dashboard** with 4 KPIs, 3 charts, and 3 filters
 - **Containerized Deployment** using Docker Compose (3 services)
 - **Apache Airflow Orchestration** with daily scheduling at 2 AM
+- **Live Demo** deployed on Streamlit Cloud
 - **Source Dataset** from UCI Machine Learning Repository (CC BY 4.0)
 - **92 Verification Checks** across 8 phases
-- **15 Screenshots** for complete documentation
 
 ### Quick Stats
 
 | Metric | Value |
 |--------|-------|
 | Input Rows | 1,067,371 |
-| Output Rows | ~1,000,000 (after cleaning) |
-| Execution Time | 3-4 minutes |
+| Output Rows | 768,845 (after cleaning) |
+| Execution Time | ~4 minutes |
 | Dashboard KPIs | 4 |
 | Charts | 3 |
 | Filters | 3 |
@@ -59,15 +60,17 @@ This project is part of the **GIG-01** service offering — designed for SaaS st
 
 ## Live Demo
 
-**URL:** To be determined after implementation
+**URL:** https://gig01-etl-pipeline.streamlit.app
 
-The dashboard will be deployed on Streamlit Cloud with 10,000 rows of sample data for fast and responsive performance.
+The dashboard is deployed on Streamlit Cloud with 10,000 rows of sample data for fast and responsive performance.
 
 **Features:**
 - 4 KPIs: Total Transactions, Total Revenue, Total Customers, Total Products
 - 3 Charts: Revenue by Month, Top 10 Products, Revenue by Country
 - 3 Filters: Date Range, Country, Product Category
 - Sample data: 10,000 rows of Online Retail II
+
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://gig01-etl-pipeline.streamlit.app)
 
 ---
 
@@ -225,7 +228,7 @@ python run_all_verifications.py
 | KPI | Calculation | Display Format |
 |-----|-------------|----------------|
 | Total Transactions | `COUNT(*)` | `{value:,}` |
-| Total Revenue | `SUM(quantity * unit_price)` | `£{value:,.2f}` |
+| Total Revenue | `SUM(quantity * unit_price)` | `GBP {value:,.2f}` |
 | Total Customers | `COUNT(DISTINCT customer_id)` | `{value:,}` |
 | Total Products | `COUNT(DISTINCT stock_code)` | `{value:,}` |
 
@@ -243,7 +246,7 @@ python run_all_verifications.py
 |--------|------|---------|
 | Date Range | Date picker | Full period (2009-2011) |
 | Country | Multiselect | All countries |
-| Product Category | Selectbox | All categories |
+| Product Category | Multiselect | All categories |
 
 ---
 
@@ -257,6 +260,8 @@ GIG-01-Basic-ETL-ELT-Pipeline/
 ├── .env
 ├── docker-compose.yml
 ├── requirements.txt
+├── structure.py
+├── generate-diagrams.py
 ├── screenshots/
 │   ├── architecture-diagram.png
 │   ├── data-flow-diagram.png
@@ -293,11 +298,19 @@ GIG-01-Basic-ETL-ELT-Pipeline/
 │       ├── clean_data.csv
 │       └── clean_data_sample.csv
 ├── warehouse/
+│   ├── init-databases.sh
 │   └── init.sql
 ├── dashboard/
 │   ├── app.py
 │   ├── Dockerfile
 │   └── requirements.txt
+├── streamlit-cloud/
+│   ├── app.py
+│   ├── requirements.txt
+│   ├── .streamlit/
+│   │   └── config.toml
+│   └── data/
+│       └── sample_data.csv
 ├── docs/
 │   ├── blueprint.md
 │   ├── CHANGELOG.md
@@ -363,17 +376,17 @@ unzip data/raw/online_retail_ii.zip -d data/raw/
 
 ### 8-Phase Verification
 
-| Phase | Name | Checks |
-|-------|------|--------|
-| 1 | Setup & Environment | 12 |
-| 2 | Docker & Container Setup | 10 |
-| 3 | Airflow DAG Creation | 10 |
-| 4 | Pipeline Execution | 10 |
-| 5 | PostgreSQL Data Verification | 10 |
-| 6 | Dashboard Verification (Local) | 15 |
-| 7 | Screenshots Documentation | 15 |
-| 8 | Documentation & Handover | 10 |
-| **TOTAL** | **All Phases** | **92** |
+| Phase | Name | Checks | Status |
+|-------|------|--------|:---:|
+| 1 | Setup & Environment | 15 | Complete |
+| 2 | Docker & Container Setup | 10 | Complete |
+| 3 | Airflow DAG Creation | 10 | Complete |
+| 4 | Pipeline Execution | 11 | Complete |
+| 5 | PostgreSQL Data Verification | 10 | Complete |
+| 6 | Dashboard Verification (Local) | 15 | Complete |
+| 7 | Screenshots Documentation | 15 | Complete |
+| 8 | Documentation & Handover | 10 | In Progress |
+| **TOTAL** | **All Phases** | **96** | **81%** |
 
 ```bash
 # Run all verifications
@@ -399,6 +412,7 @@ python verify-phase-2.py
 | 6 | All filters work | Test each filter |
 | 7 | Documentation complete | Review docs/ folder |
 | 8 | Docker Compose works | `docker-compose up -d` succeeds |
+| 9 | Live demo accessible | https://gig01-etl-pipeline.streamlit.app |
 
 ---
 
@@ -406,14 +420,14 @@ python verify-phase-2.py
 
 | No | Item | Delivered |
 |----|------|:---:|
-| 1 | Source code (Git repo) | |
-| 2 | Docker Compose file | |
-| 3 | Database schema (init.sql) | |
-| 4 | Dashboard app | |
-| 5 | Documentation (README, blueprint, cheatsheet) | |
-| 6 | Screenshots | |
-| 7 | Training session (1 hour) | |
-| 8 | Access credentials | |
+| 1 | Source code (Git repo) | ✅ |
+| 2 | Docker Compose file | ✅ |
+| 3 | Database schema (init.sql) | ✅ |
+| 4 | Dashboard app | ✅ |
+| 5 | Documentation (README, blueprint, cheatsheet) | ✅ |
+| 6 | Screenshots (15 files) | ✅ |
+| 7 | Live demo deployed | ✅ |
+| 8 | Access credentials | Pending |
 
 ---
 
@@ -473,6 +487,9 @@ http://localhost:8080 (admin/admin)
 # DASHBOARD
 http://localhost:8501
 
+# LIVE DEMO
+https://gig01-etl-pipeline.streamlit.app
+
 # POSTGRES CONNECT
 docker exec -it gig01-postgres psql -U admin -d warehouse
 
@@ -507,17 +524,17 @@ For complete project documentation, please refer to the `/docs/` directory:
 
 ---
 
-## Performance (Target)
+## Performance (Actual)
 
 | Metric | Value |
 |--------|-------|
-| Input Rows | 1,067,371 |
-| Output Rows | ~1,000,000 |
-| Extract Time | ~60 seconds |
-| Transform Time | ~30 seconds |
-| Load Time | ~120 seconds |
-| **Total Time** | **~3-4 minutes** |
-| PostgreSQL Size | ~100 MB |
+| Input Rows | 1,067,371 (2 sheets) |
+| Output Rows | 768,845 (after cleaning) |
+| Extract Time | ~75 seconds |
+| Transform Time | ~8 seconds |
+| Load Time | ~118 seconds |
+| **Total Time** | **~4 minutes** |
+| PostgreSQL Size | ~1.23 MB (sample) |
 
 ---
 
@@ -525,7 +542,7 @@ For complete project documentation, please refer to the `/docs/` directory:
 
 | Metric | Before | After |
 |--------|--------|-------|
-| Report generation | 1-2 hours manual | 3-4 minutes automated |
+| Report generation | 1-2 hours manual | 4 minutes automated |
 | Data freshness | Daily manual | Fully automated daily |
 | Human error risk | High | Eliminated |
 | Decision-making latency | High | Low (instant access) |
@@ -545,6 +562,7 @@ For complete project documentation, please refer to the `/docs/` directory:
 | No data in dashboard | Run ETL scripts or trigger DAG first |
 | Port already in use | Change port in docker-compose.yml |
 | XLSX read error | Install openpyxl: `pip install openpyxl` |
+| Live demo data error | Verify sample_data.csv exists in streamlit-cloud/data/ |
 
 ### Logs and Debugging
 
@@ -599,6 +617,7 @@ docker-compose down -v && docker-compose up -d
 |----------|-----|
 | **Airflow UI** | http://localhost:8080 |
 | **Dashboard (Local)** | http://localhost:8501 |
+| **Live Demo** | https://gig01-etl-pipeline.streamlit.app |
 | **Online Retail II Dataset** | https://archive.ics.uci.edu/ml/datasets/Online+Retail+II |
 | **Airflow Docs** | https://airflow.apache.org/docs/ |
 | **PostgreSQL Docs** | https://www.postgresql.org/docs/ |
@@ -676,5 +695,5 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ---
 
-*Last Updated: 2026-09-23*
-*Document Version: 1.0.1*
+*Last Updated: 2026-09-29*
+*Document Version: 1.0.2*
